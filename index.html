@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Tenaris Siderca - Turnos</title>
+    
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#121212">
+    <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/2370/2370264.png">
+    
+    <link rel="manifest" href='data:application/json,{"name":"Turnos Tenaris","short_name":"Turnos","start_url":"index.html","display":"standalone","background_color":"#121212","theme_color":"#121212","icons":[{"src":"https://cdn-icons-png.flaticon.com/512/2370/2370264.png","sizes":"512x512","type":"image/png"}]}'>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <style>
+        :root {
+            --bg: #121212; --card-bg: #1e1e1e; --text-main: #e0e0e0;
+            --text-sec: #aaaaaa; --border: #ffffff; /* Bordes blancos en modo oscuro */
+            --btn-bg: #2c2c2c; --btn-border: #444; --shadow: rgba(0,0,0,0.5);
+            --color-m: #fbc02d; --text-m: #000;
+            --color-t: #ff9800; --text-t: #fff;
+            --color-n: #3f51b5; --text-n: #fff;
+            --color-f: #4caf50; --text-f: #fff;
+            --hoy-border: #e91e63; --highlight: #2196f3;
+        }
+
+        body.light-mode {
+            --bg: #f4f7f6; --card-bg: #ffffff; --text-main: #333333;
+            --text-sec: #666666; --border: #000000; /* Bordes negros en modo claro */
+            --btn-bg: #ffffff; --btn-border: #ddd; --shadow: rgba(0,0,0,0.1);
+            --color-m: #ffeb3b; --text-m: #333;
+        }
+
+        body { 
+            font-family: 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text-main);
+            margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center;
+            transition: 0.3s; min-width: 320px; box-sizing: border-box;
+        }
+        
+        .controls { 
+            background: var(--card-bg); padding: 15px; border-radius: 12px; box-shadow: 0 4px 6px var(--shadow); 
+            margin-bottom: 20px; width: 100%; max-width: 950px; box-sizing: border-box;
+        }
+
+        .top-bar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; border-bottom: 1px solid #444; padding-bottom: 10px; }
+        .app-title { margin: 0; font-size: 1.1rem; font-weight: 800; color: var(--highlight); }
+
+        .toolbar-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+        .icon-btn {
+            background: var(--btn-bg); border: 1px solid var(--btn-border); color: var(--text-main);
+            padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 600;
+        }
+
+        .selector-escuadra { display: flex; justify-content: center; gap: 6px; margin-top: 15px; flex-wrap: wrap; }
+        .squad-btn { 
+            padding: 10px 18px; font-size: 1.1rem; cursor: pointer; border: 2px solid var(--btn-border); 
+            background: var(--btn-bg); color: var(--text-main); border-radius: 8px; font-weight: bold; 
+        }
+        .squad-btn.active { background: var(--highlight); color: white; border-color: #1565c0; transform: scale(1.05); }
+
+        .calendar-container { width: 100%; max-width: 950px; background: var(--card-bg); padding: 15px; border-radius: 12px; box-sizing: border-box; }
+        .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .nav-btn { background: var(--btn-bg); border: 1px solid var(--btn-border); color: var(--text-main); padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+
+        .grid-calendario { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; width: 100%; }
+        .dia-semana { font-weight: bold; text-align: center; padding: 5px; color: var(--text-sec); font-size: 0.75rem; text-transform: uppercase; }
+        
+        /* CELDAS CON BORDES MÁS VISIBLES */
+        .celda-dia { 
+            border: 1.5px solid var(--border); 
+            min-height: 95px; padding: 5px; border-radius: 6px; 
+            display: flex; flex-direction: column; gap: 3px; box-sizing: border-box; 
+        }
+        .header-dia { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed var(--border); margin-bottom: 2px; }
+        .fecha-num { font-weight: bold; font-size: 1.1rem; }
+        
+        .hoy-box { border: 3px solid var(--hoy-border) !important; background: rgba(233, 30, 99, 0.1); }
+        .etiqueta-hoy { background: var(--hoy-border); color: white; font-size: 0.6rem; padding: 2px 5px; border-radius: 4px; font-weight: bold; }
+
+        .turno-badge { font-size: 0.65rem; padding: 4px 6px; border-radius: 4px; display: flex; justify-content: space-between; font-weight: bold; }
+        .Mañana { background-color: var(--color-m); color: var(--text-m); }
+        .Tarde { background-color: var(--color-t); color: var(--text-t); }
+        .Noche { background-color: var(--color-n); color: var(--text-n); }
+        .Franco { background-color: var(--color-f); color: var(--text-f); }
+        
+        .seleccionada { border: 1.5px solid var(--text-main); order: -1; transform: scale(1.02); }
+
+        .footer-creditos { margin-top: 20px; font-size: 0.85rem; color: var(--text-sec); text-align: center; width: 100%; max-width: 950px; line-height: 1.6; }
+        .footer-creditos a { color: var(--highlight); text-decoration: none; font-weight: bold; }
+
+        /* RESPONSIVO AJUSTADO AL ANCHO */
+        @media (max-width: 768px) {
+            body { padding: 8px; width: 100%; }
+            .controls, .calendar-container { padding: 10px; width: 100%; }
+            .grid-calendario { gap: 3px; }
+            .celda-dia { min-height: 80px; padding: 4px; }
+            .fecha-num { font-size: 1rem; }
+            .turno-badge { font-size: 0.55rem; padding: 3px 4px; flex-direction: column; text-align: center; }
+            .nav-btn { padding: 8px 12px; }
+        }
+
+        /* OCULTAR BOTONES AL IMPRIMIR */
+        @media print {
+            .controls, .nav-btn, .toolbar-btns, .footer-creditos { display: none !important; }
+            body { background: white; color: black; padding: 0; }
+            .calendar-container { box-shadow: none; border: none; width: 100% !important; max-width: 100%; }
+            .celda-dia { border: 1px solid black !important; page-break-inside: avoid; }
+            .header-dia { border-bottom: 1px solid #ccc !important; }
+        }
+    </style>
+</head>
+<body class="dark-mode">
+
+    <div class="controls">
+        <div class="top-bar">
+            <h2 class="app-title">🗓️ Calendario de turnos Tenaris Siderca</h2>
+            <div class="toolbar-btns">
+                <button class="icon-btn" onclick="toggleViewMode()" id="btnViewMode" title="Alternar entre ver solo tu letra o el grupo completo">Ver todas</button>
+                <button class="icon-btn" onclick="toggleTheme()" id="btnTheme" title="Cambiar entre modo claro y oscuro">☀️</button>
+                <button class="icon-btn" onclick="toggleFullScreen()" title="Poner la aplicación en pantalla completa">⛶</button>
+                <button class="icon-btn" onclick="window.print()" title="Imprimir la vista actual del mes">Imprimir</button>
+                <button class="icon-btn" onclick="descargarImagen()" title="Guardar este mes como una imagen JPG">JPG</button>
+                <button class="icon-btn" onclick="generarAnoCompleto()" title="Generar un reporte imprimible de los 12 meses">Año</button>
+            </div>
+        </div>
+
+        <div class="selector-escuadra">
+            <button onclick="setEscuadra('D')" id="btnD" class="squad-btn" title="Régimen 6x2 - Escuadra D">D</button>
+            <button onclick="setEscuadra('E')" id="btnE" class="squad-btn" title="Régimen 6x2 - Escuadra E">E</button>
+            <button onclick="setEscuadra('F')" id="btnF" class="squad-btn" title="Régimen 6x1 - Escuadra F">F</button>
+            <button onclick="setEscuadra('G')" id="btnG" class="squad-btn" title="Régimen 6x1 - Escuadra G">G</button>
+            <button onclick="setEscuadra('H')" id="btnH" class="squad-btn" title="Régimen 6x1 - Escuadra H">H</button>
+            <button onclick="setEscuadra('J')" id="btnJ" class="squad-btn" title="Régimen 6x2 - Escuadra J">J</button>
+            <button onclick="setEscuadra('K')" id="btnK" class="squad-btn" title="Régimen 6x2 - Escuadra K">K</button>
+        </div>
+    </div>
+
+    <div id="capture-area" class="calendar-container">
+        <div class="calendar-header">
+            <button class="nav-btn" onclick="cambiarMes(-1)" title="Mes anterior">◀</button>
+            <h3 id="mes-titulo" style="margin:0; font-size: 1.4rem;">Enero 2026</h3>
+            <button class="nav-btn" onclick="cambiarMes(1)" title="Mes siguiente">▶</button>
+        </div>
+        <div class="grid-calendario" id="calendario"></div>
+    </div>
+    
+    <div class="footer-creditos">
+        v5.8 | creado por <a href="mailto:lfrias@tenaris.com">lfrias@tenaris.com</a> | Tenaris Siderca FAPE-Premium
+    </div>
+
+    <script>
+        let escuadraSeleccionada = 'F'; 
+        let fechaActual = new Date(); 
+        let verSoloSeleccionada = true;
+        let darkMode = true;
+
+        const g6x2 = ['D', 'E', 'J', 'K'], g6x1 = ['F', 'G', 'H'];
+        const d6x2 = { 'D': 23, 'E': 17, 'J': 11, 'K': 5 };
+
+        function getTurno6x2(letra, f) {
+            const base = new Date(2026, 0, 1);
+            const diff = Math.floor((f - base) / 86400000);
+            const pos = ((diff + d6x2[letra]) % 24 + 24) % 24;
+            if (pos <= 5) return 'Mañana'; if (pos >= 8 && pos <= 13) return 'Noche'; if (pos >= 16 && pos <= 21) return 'Tarde'; return 'Franco';
+        }
+
+        function getTurno6x1(letra, f) {
+            if (f.getDay() === 0) return 'Franco';
+            const baseLunes = new Date(2026, 0, 12);
+            const lunes = new Date(f);
+            const d = lunes.getDay() || 7;
+            lunes.setDate(lunes.getDate() - (d - 1));
+            const sem = Math.round((lunes - baseLunes) / 604800000);
+            const off = { 'F': 0, 'H': 1, 'G': 2 };
+            return ['Mañana', 'Noche', 'Tarde'][((sem + off[letra]) % 3 + 3) % 3];
+        }
+
+        function setEscuadra(l) {
+            escuadraSeleccionada = l;
+            document.querySelectorAll('.squad-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('btn' + l).classList.add('active');
+            renderCalendario();
+        }
+
+        function renderCalendario() {
+            const cont = document.getElementById('calendario');
+            const meses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+            document.getElementById('mes-titulo').innerText = `${meses[fechaActual.getMonth()]} ${fechaActual.getFullYear()}`;
+            cont.innerHTML = '';
+            ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"].forEach(d => {
+                const div = document.createElement('div'); div.className = 'dia-semana'; div.innerText = d; cont.appendChild(div);
+            });
+            const pDia = new Date(fechaActual.getFullYear(), fechaActual.getMonth(), 1);
+            const uDia = new Date(fechaActual.getFullYear(), fechaActual.getMonth() + 1, 0);
+            let offset = pDia.getDay() === 0 ? 6 : pDia.getDay() - 1;
+            for (let i = 0; i < offset; i++) cont.appendChild(document.createElement('div'));
+
+            const hoy = new Date();
+            let lista = verSoloSeleccionada ? [escuadraSeleccionada] : (g6x2.includes(escuadraSeleccionada) ? g6x2 : g6x1);
+
+            for (let d = 1; d <= uDia.getDate(); d++) {
+                const fCelda = new Date(fechaActual.getFullYear(), fechaActual.getMonth(), d);
+                const celda = document.createElement('div'); celda.className = 'celda-dia';
+                if (fCelda.toDateString() === hoy.toDateString()) celda.classList.add('hoy-box');
+                celda.innerHTML = `<div class="header-dia"><span class="fecha-num">${d}</span>${fCelda.toDateString() === hoy.toDateString() ? '<span class="etiqueta-hoy">HOY</span>' : ''}</div>`;
+                lista.forEach(l => {
+                    const t = g6x2.includes(l) ? getTurno6x2(l, fCelda) : getTurno6x1(l, fCelda);
+                    const b = document.createElement('div'); b.className = `turno-badge ${t} ${l === escuadraSeleccionada ? 'seleccionada' : ''}`;
+                    b.innerHTML = `<span>${l}</span><span>${t}</span>`; celda.appendChild(b);
+                });
+                cont.appendChild(celda);
+            }
+        }
+
+        function toggleTheme() {
+            darkMode = !darkMode;
+            document.body.classList.toggle('light-mode', !darkMode);
+            document.getElementById('btnTheme').innerText = darkMode ? '☀️' : '🌙';
+        }
+
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+            else if (document.exitFullscreen) document.exitFullscreen();
+        }
+
+        function cambiarMes(n) { fechaActual.setMonth(fechaActual.getMonth() + n); renderCalendario(); }
+        function toggleViewMode() { 
+            verSoloSeleccionada = !verSoloSeleccionada; 
+            document.getElementById('btnViewMode').innerText = verSoloSeleccionada ? 'Ver todas' : 'Ver mi letra';
+            renderCalendario(); 
+        }
+
+        function descargarImagen() {
+            const area = document.getElementById('capture-area');
+            html2canvas(area, { backgroundColor: darkMode ? '#1e1e1e' : '#ffffff', scale: 2 }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `Turnos_${escuadraSeleccionada}.jpg`;
+                link.href = canvas.toDataURL("image/jpeg", 0.9);
+                link.click();
+            });
+        }
+
+        function generarAnoCompleto() {
+            const win = window.open("", "_blank");
+            const anio = fechaActual.getFullYear();
+            const reg = g6x2.includes(escuadraSeleccionada) ? "Régimen 6x2" : "Régimen 6x1";
+            let html = `<html><head><title>${anio} - Escuadra ${escuadraSeleccionada}</title><style>
+                body { font-family: sans-serif; padding: 20px; background: white; }
+                .h { text-align: center; border-bottom: 2px solid #2196f3; padding-bottom: 10px; margin-bottom: 20px; }
+                .grid-anio { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
+                .mes { border: 1px solid #000; padding: 8px; border-radius: 5px; page-break-inside: avoid; }
+                .grid-mes { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; font-size: 0.65rem; }
+                .dia { border: 1px solid #ccc; padding: 3px; min-height: 40px; }
+                .Mañana { background: #fffde7; border-left: 3px solid #fbc02d; }
+                .Tarde { background: #fff3e0; border-left: 3px solid #ff9800; }
+                .Noche { background: #e8eaf6; border-left: 3px solid #3f51b5; }
+                .Franco { background: #e8f5e9; border-left: 3px solid #4caf50; }
+                @media print { .grid-anio { grid-template-columns: repeat(2, 1fr); } button { display:none; } }
+            </style></head><body>
+            <button onclick="window.print()" style="padding:10px 20px; margin-bottom:20px; background:#2196f3; color:white; border:none; border-radius:5px; cursor:pointer; font-weight:bold;">Imprimir Año Completo</button>
+            <div class="h"><h1>Año ${anio} - Letra "${escuadraSeleccionada}"</h1><p>${reg} - Tenaris Siderca</p></div>
+            <div class="grid-anio">`;
+
+            for (let m = 0; m < 12; m++) {
+                const nombre = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"][m];
+                html += `<div class="mes"><h3>${nombre}</h3><div class="grid-mes">`;
+                ["L","M","M","J","V","S","D"].forEach(dia => html += `<div style="text-align:center;font-weight:bold">${dia}</div>`);
+                const pD = new Date(anio, m, 1); const uD = new Date(anio, m + 1, 0);
+                let off = pD.getDay() === 0 ? 6 : pD.getDay() - 1;
+                for(let i=0; i<off; i++) html += `<div></div>`;
+                for(let d=1; d<=uD.getDate(); d++) {
+                    const f = new Date(anio, m, d);
+                    const t = g6x2.includes(escuadraSeleccionada) ? getTurno6x2(escuadraSeleccionada, f) : getTurno6x1(escuadraSeleccionada, f);
+                    html += `<div class="dia ${t}"><b>${d}</b><br>${t}</div>`;
+                }
+                html += `</div></div>`;
+            }
+            html += `</div></body></html>`;
+            win.document.write(html);
+            win.document.close();
+        }
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                const sw = 'self.addEventListener("fetch", (e) => e.respondWith(fetch(e.request)));';
+                const blob = new Blob([sw], {type: 'text/javascript'});
+                navigator.serviceWorker.register(URL.createObjectURL(blob));
+            });
+        }
+
+        setEscuadra('F');
+    </script>
+</body>
+</html>
